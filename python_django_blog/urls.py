@@ -15,12 +15,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from articles.views import hello
+from articles.urls import urlpatterns as articles_urls
 from crm import views as crm_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('my_hello', hello),
-    path('crm_form', crm_views.main_form_view),
-    path('thanks', crm_views.thanks_page, name='thanks_page')
+    # path('my_hello', hello),
+    # path('crm_form', crm_views.main_form_view),
+    # path('thanks', crm_views.thanks_page, name='thanks_page')
 ]
+urlpatterns.extend(articles_urls)
