@@ -1,12 +1,12 @@
 from django.contrib import admin
 
 # Register your models here.
-from articles.models import Article, Author, Tag
+from articles.models import Articles, Author, Tag
 
 
-@admin.register(Article)
+@admin.register(Articles)
 class PostAdmin(admin.ModelAdmin):
-    model = Article
+    model = Articles
 
     list_display = (
         "id",
@@ -39,10 +39,22 @@ class PostAdmin(admin.ModelAdmin):
     # date_hierarchy = "publish_date"
     save_on_top = True
 
-admin.register(Article)
+admin.register(Articles)
+@admin.register(Author)
 class AuthorAdmin(admin.ModelAdmin):
     model = Author
 
-    list_display = (
-        'name'
+    list_display = [
+       'id', 'name'
+    ]
+    list_editable = (
+        "name",
     )
+    save_on_top = True
+admin.register(Author)
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    model = Tag
+
+    list_display = ["id", 'name']
+    list_editable = ("name",)
