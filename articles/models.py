@@ -14,11 +14,10 @@ class Tag(models.Model):
 
 class Articles(models.Model):
     title = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True, max_length=255)
+    slug = models.SlugField(max_length=255)
     content = models.TextField()
     created_on = models.DateField(auto_now_add=True)
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
-    url = models.URLField(max_length=128, db_index=True, unique=True, blank=True)
 
 

@@ -15,14 +15,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from articles.views import ArticleAPIView
+from articles.views import ArticleAPIViewV1
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
-    path('api/v1/article-list', ArticleAPIView.as_view()),
-    path('api/v1/article/<int:pk>', ArticleAPIView.as_view())
+    path('api/v1/article-list', ArticleAPIViewV1.as_view()),
+    path('api/v1/article/<int:pk>', ArticleAPIViewV1.as_view())
     # path('my_hello', hello),
     # path('crm_form', crm_views.main_form_view),
     # path('thanks', crm_views.thanks_page, name='thanks_page')
