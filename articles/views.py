@@ -7,7 +7,7 @@ from articles.serializer import ArticleSerializer
 from articles.models import Articles
 
 
-class ArticleAPIView(APIView):
+class ArticleAPIViewV1(APIView):
     """
     A view that returns a templated HTML representation of a given user.
     """
@@ -17,18 +17,27 @@ class ArticleAPIView(APIView):
         return Response({'articles': ArticleSerializer(articles, many=True).data})
 
     def post(self, request, *args, **kwargs):
-        # TODO fix validate
         serializer = ArticleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'data': ArticleSerializer.data})
+        return Response({'data': serializer.data})
 
     def put(self, request, *args, **kwargs):
         pk = self.kwargs.get('pk')
         if pk:
-            article = Articles.objects.filter(id=pk)
-            serializer = ArticleSerializer(instance=request.data, many=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-        return Response({'articles': ArticleSerializer.data})
-    # def api_response(self, request):
+            article = Articles.objects.filter(id=pk).get()
+            if article:
+                serializer = ArticleSerializer(instance=article, data=request.data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return Response({'updated_articles': serializer.data})
+        else:
+            return Response({'error': 'not accepted data'})
+
+    def delete(self, request, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        if pk:
+            article = Articles.objects.filter(id=pk).get()
+            if article:
+                article.delete()
+                return Response({'deleted_articles': pk})
