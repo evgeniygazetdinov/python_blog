@@ -41,3 +41,16 @@ class ArticleAPIViewV1(APIView):
             if article:
                 article.delete()
                 return Response({'deleted_articles': pk})
+
+
+class ArticleAPIlistV2(generics.ListCreateAPIView):
+    queryset = Articles.objects.all()
+    serializer_class = ArticleSerializer
+
+class ArticleAPIUpdateV2(generics.UpdateAPIView):
+    queryset = Articles.objects.all()
+    serializer_class = ArticleSerializer
+
+class ArticleAPIDetailCrudV2(generics.RetrieveDestroyAPIView):
+    queryset = Articles.objects.all()
+    serializer_class = ArticleSerializer

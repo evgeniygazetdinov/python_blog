@@ -15,15 +15,19 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from articles.views import ArticleAPIViewV1
+from articles.views import ArticleAPIViewV1, ArticleAPIlistV2, ArticleAPIUpdateV2, ArticleAPIDetailCrudV2
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
     path('api/v1/article-list', ArticleAPIViewV1.as_view()),
-    path('api/v1/article/<int:pk>', ArticleAPIViewV1.as_view())
-    # path('my_hello', hello),
-    # path('crm_form', crm_views.main_form_view),
-    # path('thanks', crm_views.thanks_page, name='thanks_page')
+    path('api/v1/article/<int:pk>', ArticleAPIViewV1.as_view()),
+
+    #
+    path('api/v2/article', ArticleAPIlistV2.as_view()),
+    path('api/v2/article/crud/<int:pk>', ArticleAPIDetailCrudV2.as_view()),
+    path('api/v2/article/<int:pk>', ArticleAPIUpdateV2.as_view()),
+    #
+
 ]
