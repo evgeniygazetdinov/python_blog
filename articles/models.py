@@ -20,4 +20,6 @@ class Articles(models.Model):
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
 
-
+class Category(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    articles = models.ManyToManyField(Articles)
