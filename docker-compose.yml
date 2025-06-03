@@ -1,0 +1,160 @@
+name: python-api-packaging
+
+services:
+  certs:
+    build:
+      context: .
+      dockerfile: Dockerfile.certs
+    volumes:
+      - certs:/certs
+
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.0
+    depends_on:
+      certs:
+        condition: service_completed_successfully
+
+    command: [
+      "etcd",
+      "--name=etcd",
+      "--data-dir=/etcd-data",
+      "--listen-client-urls=https://0.0.0.0:2379",
+      "--advertise-client-urls=https://etcd:2379",
+      "--listen-peer-urls=https://0.0.0.0:2380",
+      "--initial-advertise-peer-urls=https://etcd:2380",
+      "--initial-cluster=etcd=https://etcd:2380",
+      "--initial-cluster-token=ustor-cluster",
+      "--initial-cluster-state=new",
+      "--cert-file=/certs/ustor_etcd.crt",
+      "--key-file=/certs/ustor_etcd.key",
+      "--trusted-ca-file=/certs/ustor_ca.crt",
+      "--peer-cert-file=/certs/ustor_etcd-peer.crt",
+      "--peer-key-file=/certs/ustor_etcd-peer.key",
+      "--peer-trusted-ca-file=/certs/ustor_ca.crt",
+      "--client-cert-auth",
+      "--peer-client-cert-auth"
+    ]
+    networks:
+      - app-network
+    ports:
+      - "2379:2379"
+    volumes:
+      - etcd-data:/etcd-data
+      - certs:/certs
+
+  ustor-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      certs:
+        condition: service_completed_successfully
+
+    hostname: ustor-api
+    user: ustor
+    volumes:
+      - .:/app
+      - certs:/certs
+    working_dir: /app/ustor-api
+    command: bash -c "mkdir -p ~/.cache/pip && export PYTHONPATH=/app && cd /app/ustor-utils && pip install --no-deps -e . && cd /app/ustor-api && pip install --no-deps -e . && cd /app && pip install -r requirements.txt && python -m uvicorn ustor_api.main:app --host 0.0.0.0 --port 5000 --reload"
+    ports:
+      - "5000:5000"
+    networks:
+      - app-network
+    environment:
+      - USTOR_TRANSPORT_ETCD_IP=etcd
+      - USTOR_TRANSPORT_ETCD_PORT=2379
+      - USTOR_ETCD_ADDRESS=["etcd:2379"]
+      - USTOR_HOST_IP=etcd
+      - USTOR_TLS=1
+      - USTOR_CA_CERT=/certs/ustor_ca.crt
+      - USTOR_CLIENT_CERT=/certs/ustor_client.crt
+      - USTOR_CLIENT_KEY=/certs/ustor_client.key
+      - USTOR_API_HOST=0.0.0.0
+      - USTOR_API_PORT=5000
+      - USTOR_API_INSECURE=true
+
+      - USTOR_LOG_LEVEL=DEBUG
+      - USTOR_DB_HOST=ustor-audit
+      - USTOR_DB_PORT=26257
+      - USTOR_DB_USER=root
+      - USTOR_DB_NAME=defaultdb
+      - USTOR_DB_PASSWORD=Pasw0rd
+      - USTOR_DB_SSL_MODE=disable
+
+
+  ustor-cli:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      certs:
+        condition: service_completed_successfully
+
+    volumes:
+      - .:/app
+      - certs:/certs
+    user: ustor
+    working_dir: /app/ustor-cli
+    command: bash -c "mkdir -p ~/.cache/pip && export PYTHONPATH=/app && cd /app/ustor-utils && pip install -e . && cd /app/ustor-cli && pip install -e . && ustor-cli"
+    networks:
+      - app-network
+    environment:
+      - USTOR_TRANSPORT_ETCD_IP=etcd
+      - USTOR_TRANSPORT_ETCD_PORT=2379
+      - USTOR_ETCD_ADDRESS=["etcd:2379"]
+      - USTOR_TLS=1
+      - USTOR_HOST_IP=etcd
+      - USTOR_CA_CERT=/certs/ustor_ca.crt
+      - USTOR_CLIENT_CERT=/certs/ustor_client.crt
+      - USTOR_CLIENT_KEY=/certs/ustor_client.key
+
+      - USTOR_LOG_LEVEL=DEBUG
+
+  ustor-healthmanager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      certs:
+        condition: service_completed_successfully
+
+    volumes:
+      - .:/app
+      - certs:/certs
+    user: ustor
+    working_dir: /app/ustor-healthmanager
+    command: bash -c "mkdir -p ~/.cache/pip && export PYTHONPATH=/app && cd /app/ustor-utils && pip install -e . && cd /app/ustor-healthmanager && pip install -e . && ustor-healthmanager"
+    networks:
+      - app-network
+    environment:
+      - USTOR_TRANSPORT_ETCD_IP=etcd
+      - USTOR_TRANSPORT_ETCD_PORT=2379
+      - USTOR_ETCD_ADDRESS=["etcd:2379"]
+      - USTOR_TLS=1
+      - USTOR_HOST_IP=etcd
+      - USTOR_CA_CERT=/certs/ustor_ca.crt
+      - USTOR_CLIENT_CERT=/certs/ustor_client.crt
+      - USTOR_CLIENT_KEY=/certs/ustor_client.key
+
+      - USTOR_LOG_LEVEL=DEBUG
+
+  ustor-audit:
+    image: cockroachdb/cockroach:v21.2.11
+    command: start-single-node --insecure --listen-addr=0.0.0.0:26257 --advertise-addr=ustor-audit:26257
+    ports:
+      - "26257:26257"
+      - "8080:8080"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24
+
+volumes:
+  etcd-data:
+  certs:
